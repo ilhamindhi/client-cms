@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Search, ShieldX } from "lucide-react";
+import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card, { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
+import Skeleton from "@/components/ui/Skeleton";
 import Table, { TableCell, TableHead, TableRow } from "@/components/ui/Table";
 import { listAuditLogs } from "@/lib/api/admin";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -20,6 +22,7 @@ export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [action, setAction] = useState("");
   const [actorId, setActorId] = useState("");
+  const isInitialLoading = isLoading && logs.length === 0;
 
   async function fetchLogs() {
     if (!accessToken) {
@@ -69,31 +72,76 @@ export default function AuditLogsPage() {
             Menampilkan semua aksi penting: create/promote admin, perubahan status, dan event sensitif.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <CardContent className="space-y-4" aria-busy={isLoading}>
+          <form
+            className="grid grid-cols-1 gap-3 lg:grid-cols-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void fetchLogs();
+            }}
+          >
             <Input
               label="Action"
               value={action}
               placeholder="auth.admin.created"
               onChange={(event) => setAction(event.target.value)}
+              aria-label="Filter by action"
             />
             <Input
               label="Actor User ID"
               value={actorId}
               placeholder="uuid actor"
               onChange={(event) => setActorId(event.target.value)}
+              aria-label="Filter by actor user id"
             />
             <div className="flex items-end gap-2">
-              <Button variant="outline" className="w-full" onClick={fetchLogs} isLoading={isLoading}>
+              <Button variant="outline" className="w-full" type="submit" isLoading={isLoading}>
                 <Search size={16} />
                 Filter
               </Button>
             </div>
-          </div>
+          </form>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <Alert variant="error">{error}</Alert> : null}
 
-          {!isLoading && logs.length === 0 ? (
+          {isInitialLoading ? (
+            <Table aria-label="Loading audit logs">
+              <thead>
+                <tr>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Actor</TableHead>
+                  <TableHead>Target</TableHead>
+                  <TableHead>Resource</TableHead>
+                  <TableHead>Request</TableHead>
+                  <TableHead>Created At</TableHead>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <TableRow key={`audit-skeleton-${index}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-36" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          ) : !isLoading && logs.length === 0 ? (
             <EmptyState title="Audit log kosong" description="Belum ada event yang cocok dengan filter saat ini." />
           ) : (
             <Table>

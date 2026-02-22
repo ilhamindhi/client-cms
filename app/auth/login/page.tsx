@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Shield, UserRound } from "lucide-react";
+import { Eye, EyeOff, Lock, Shield, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
+import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { login } from "@/lib/api/auth";
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const { accessToken, setAuth } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,22 +56,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative grid min-h-screen place-content-center px-5 py-10">
+    <div className="relative grid min-h-screen min-h-[100dvh] place-content-center px-4 py-6 sm:px-5 sm:py-10">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom_right,rgba(2,6,23,0.88),rgba(15,23,42,0.9))]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(242,124,0,0.3),transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(218,61,32,0.3),transparent_40%)]" />
 
       <motion.section
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="panel relative z-10 w-full max-w-md rounded-2xl border-white/15 bg-white/8 p-7 backdrop-blur-xl"
+        className="panel relative z-10 w-full max-w-md rounded-2xl p-5 backdrop-blur-xl sm:p-7"
       >
-        <div className="mb-7 text-center">
-          <span className="mx-auto mb-3 grid size-14 place-content-center rounded-full bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/30">
-            <Shield size={26} />
+        <div className="mb-6 text-center sm:mb-7">
+          <span className="mx-auto mb-3 grid size-12 place-content-center rounded-full bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/30 sm:size-14">
+            <Shield size={24} />
           </span>
-          <h1 className="text-2xl font-black tracking-tight text-white">CMS Login</h1>
-          <p className="mt-1 text-sm text-slate-300">
+          <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">CMS Login</h1>
+          <p className="mt-1 text-sm text-slate-600">
             Masuk sebagai admin atau superadmin
           </p>
         </div>
@@ -79,45 +81,62 @@ export default function LoginPage() {
             <div className="relative">
               <UserRound className="pointer-events-none absolute left-3 top-9 text-slate-400" size={16} />
               <Input
-                label="Email atau Phone"
-                labelClassName="text-slate-200"
+                label="Email"
+                labelClassName="text-slate-700"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="admin@example.test"
+                type="email"
+                inputMode="email"
+                autoCapitalize="none"
                 autoComplete="username"
-                className="border-white/20 bg-white/10 pl-9 text-white placeholder:text-slate-400"
+                className="pl-9"
                 required
               />
             </div>
 
-            <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-9 text-slate-400" size={16} />
-              <Input
-                label="Password"
-                labelClassName="text-slate-200"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                type="password"
-                placeholder="********"
-                autoComplete="current-password"
-                className="border-white/20 bg-white/10 pl-9 text-white placeholder:text-slate-400"
-                required
-              />
+            <div>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-slate-700">Password</span>
+                <div className="relative">
+                  <Lock
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={16}
+                  />
+                  <input
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="********"
+                    autoComplete="current-password"
+                    className="h-10 w-full rounded-lg border border-[var(--color-border)] bg-white pl-9 pr-11 text-sm text-slate-900 outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    onClick={() => setShowPassword((value) => !value)}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
             </div>
           </div>
 
           {error ? (
-            <div className="rounded-lg border border-red-300/30 bg-red-500/15 px-3 py-2 text-sm text-red-200">
+            <Alert variant="error">
               {error}
-            </div>
+            </Alert>
           ) : null}
 
           <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-            Sign In
+            Masuk
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-slate-300">
+        <p className="mt-4 text-center text-xs text-slate-500">
           Gunakan akun dari seed backend untuk development lokal.
         </p>
       </motion.section>

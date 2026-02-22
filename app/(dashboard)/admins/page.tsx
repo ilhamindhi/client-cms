@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Search, ShieldAlert, UserCog, Users } from "lucide-react";
+import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card, { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
+import Skeleton from "@/components/ui/Skeleton";
 import Table, { TableCell, TableHead, TableRow } from "@/components/ui/Table";
 import { createAdminUser, listAdminUsers } from "@/lib/api/auth";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -30,10 +32,11 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<CreateAdminForm>(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [submitResult, setSubmitResult] = useState<string | null>(null);
 
   async function loadUsers() {
@@ -42,12 +45,12 @@ export default function AdminUsersPage() {
     }
 
     setIsLoading(true);
-    setError(null);
+    setPageError(null);
     try {
       const data = await listAdminUsers(accessToken);
       setUsers(data);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Failed to fetch users");
+      setPageError(caughtError instanceof Error ? caughtError.message : "Failed to fetch users");
     } finally {
       setIsLoading(false);
     }
@@ -76,13 +79,13 @@ export default function AdminUsersPage() {
   async function onCreateAdminSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken || !hasRole("superadmin")) {
-      setError("Hanya superadmin yang dapat membuat admin.");
+      setFormError("Hanya superadmin yang dapat membuat admin.");
       return;
     }
 
     setIsSubmitting(true);
     setSubmitResult(null);
-    setError(null);
+    setFormError(null);
 
     try {
       const payload: { email: string; password?: string; display_name?: string } = {
@@ -105,11 +108,37 @@ export default function AdminUsersPage() {
       setForm(emptyForm);
       await loadUsers();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Failed to save admin user");
+      setFormError(caughtError instanceof Error ? caughtError.message : "Failed to save admin user");
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
+    setForm(emptyForm);
+    setFormError(null);
+    setSubmitResult(null);
+  }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      return;
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closeModal, isModalOpen]);
+
+  const isInitialLoading = isLoading && users.length === 0;
 
   return (
     <div className="space-y-6">
@@ -120,7 +149,7 @@ export default function AdminUsersPage() {
             Halaman ini menampilkan user internal. Superadmin bisa membuat admin baru atau promote user existing.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4" aria-busy={isLoading}>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full md:max-w-md">
               <Search className="pointer-events-none absolute left-3 top-2.5 text-slate-400" size={16} />
@@ -129,23 +158,75 @@ export default function AdminUsersPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search email, display name, role..."
                 className="pl-8"
+                aria-label="Search admin users"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={loadUsers} type="button" isLoading={isLoading}>
+              <Button
+                variant="outline"
+                onClick={loadUsers}
+                type="button"
+                isLoading={isLoading}
+                aria-label="Refresh admin users"
+              >
                 Refresh
               </Button>
               {hasRole("superadmin") ? (
-                <Button type="button" leftIcon={<Plus size={16} />} onClick={() => setIsModalOpen(true)}>
+                <Button
+                  type="button"
+                  leftIcon={<Plus size={16} />}
+                  onClick={() => {
+                    setFormError(null);
+                    setSubmitResult(null);
+                    setIsModalOpen(true);
+                  }}
+                >
                   Add Admin
                 </Button>
               ) : null}
             </div>
           </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {pageError ? <Alert variant="error">{pageError}</Alert> : null}
 
-          {!isLoading && filtered.length === 0 ? (
+          {isInitialLoading ? (
+            <Table aria-label="Loading admin users">
+              <thead>
+                <tr>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Display Name</TableHead>
+                  <TableHead>Roles</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead>Created</TableHead>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <TableRow key={`admin-skeleton-${index}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          ) : !isLoading && filtered.length === 0 ? (
             <EmptyState icon={<Users size={28} />} title="No users found" description="Coba ubah kata kunci pencarian atau lakukan refresh data." />
           ) : (
             <Table>
@@ -190,10 +271,18 @@ export default function AdminUsersPage() {
       </Card>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
-          <Card className="w-full max-w-md">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+        >
+          <Card className="w-full max-w-md" role="dialog" aria-modal="true" aria-labelledby="create-admin-modal-title">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle id="create-admin-modal-title" className="flex items-center gap-2">
                 <UserCog size={18} />
                 Add / Promote Admin
               </CardTitle>
@@ -227,25 +316,17 @@ export default function AdminUsersPage() {
                 />
 
                 {submitResult ? (
-                  <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                    {submitResult}
-                  </p>
+                  <Alert variant="success">{submitResult}</Alert>
                 ) : null}
 
-                {error ? (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+                {formError ? (
+                  <Alert variant="error">
+                    {formError}
+                  </Alert>
                 ) : null}
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    variant="ghost"
-                    type="button"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      setForm(emptyForm);
-                      setSubmitResult(null);
-                    }}
-                  >
+                  <Button variant="ghost" type="button" onClick={closeModal}>
                     Close
                   </Button>
                   <Button type="submit" isLoading={isSubmitting}>
@@ -254,7 +335,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 {!hasRole("superadmin") ? (
-                  <p className="flex items-center gap-1 text-xs text-amber-700">
+                  <p className="flex items-center gap-1 text-xs text-[var(--color-primary-dark)]">
                     <ShieldAlert size={14} />
                     Hanya superadmin yang boleh membuat admin.
                   </p>

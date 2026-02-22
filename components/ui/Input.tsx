@@ -19,12 +19,14 @@ const Input = forwardRef<HTMLInputElement, Props>(function Input(
         ref={ref}
         className={cn(
           "h-10 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 disabled:cursor-not-allowed disabled:bg-slate-100",
-          error ? "border-red-400 focus:border-red-500 focus:ring-red-200" : "",
+          error
+            ? "border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger-soft)]"
+            : "",
           className,
         )}
         {...props}
       />
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {error ? <span className="text-xs text-[var(--color-danger-dark)]">{error}</span> : null}
       {!error && hint ? <span className="text-xs text-slate-500">{hint}</span> : null}
     </label>
   );

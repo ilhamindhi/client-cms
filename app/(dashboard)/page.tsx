@@ -71,24 +71,36 @@ export default function DashboardHomePage() {
           const isAudit = entry.href === "/audit-logs";
           const isRestricted = isAudit && !hasRole("superadmin");
 
+          const content = (
+            <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-lg">
+              <CardContent className="flex items-start gap-3">
+                <span className="mt-0.5 grid size-10 shrink-0 place-content-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+                  <Icon size={20} />
+                </span>
+                <div>
+                  <h3 className="font-bold text-slate-900">{entry.title}</h3>
+                  <p className="mt-1 text-sm text-slate-600">{entry.description}</p>
+                  {isRestricted ? (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary-dark)]">
+                      Superadmin only
+                    </p>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          );
+
+          if (isRestricted) {
+            return (
+              <div key={entry.href} className="opacity-60" aria-disabled="true">
+                {content}
+              </div>
+            );
+          }
+
           return (
-            <Link key={entry.href} href={entry.href} className={isRestricted ? "pointer-events-none opacity-50" : ""}>
-              <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-lg">
-                <CardContent className="flex items-start gap-3">
-                  <span className="mt-0.5 grid size-10 shrink-0 place-content-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-                    <Icon size={20} />
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-slate-900">{entry.title}</h3>
-                    <p className="mt-1 text-sm text-slate-600">{entry.description}</p>
-                    {isRestricted ? (
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
-                        Superadmin only
-                      </p>
-                    ) : null}
-                  </div>
-                </CardContent>
-              </Card>
+            <Link key={entry.href} href={entry.href}>
+              {content}
             </Link>
           );
         })}
