@@ -64,3 +64,52 @@ body {
 .text-muted {
   color: var(--color-muted);
 }
+
+.ProseMirror {
+  min-height: 12rem;
+  outline: none;
+}
+
+.ProseMirror h1 {
+  margin: 0.75rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ProseMirror h2 {
+  margin: 0.65rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ProseMirror p {
+  margin: 0.5rem 0;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.dashboard-simple [data-ui="card-description"] {
+  display: none;
+}
+
+.dashboard-simple [data-ui="field-hint"] {
+  display: none;
+}
+
+.dashboard-simple .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem;
+}
+
+.dashboard-simple .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem;
+}

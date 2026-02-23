@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const hasAccess = hasRole("admin") || hasRole("superadmin");
 
   return (
-    <AuthGuard>
+      <AuthGuard>
       {hasAccess ? (
         <div className="flex min-h-screen">
           {isMobileSidebarOpen ? (

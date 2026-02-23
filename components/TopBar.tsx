@@ -24,7 +24,7 @@ export default function TopBar({ onOpenMobileNav }: TopBarProps) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-white/90 backdrop-blur">
-      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="flex h-14 items-center justify-between gap-3 px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
@@ -35,8 +35,7 @@ export default function TopBar({ onOpenMobileNav }: TopBarProps) {
             <Menu size={18} />
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-extrabold tracking-tight text-slate-900">{title}</h1>
-            <p className="hidden text-xs text-slate-500 sm:block">Manajemen backend untuk admin dan superadmin</p>
+            <h1 className="truncate text-base font-bold tracking-tight text-slate-900">{title}</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">

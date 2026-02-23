@@ -2,12 +2,22 @@
 
 import { motion } from "framer-motion";
 import {
+  Bell,
+  BookOpen,
+  Boxes,
   ChevronsRight,
+  CreditCard,
   Gift,
+  Flag,
+  Image,
   LayoutDashboard,
   LogOut,
+  Network,
   Shield,
+  ShoppingCart,
+  Activity,
   TicketPercent,
+  Utensils,
   X,
   UserCog,
 } from "lucide-react";
@@ -38,6 +48,17 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Audit Logs", href: "/audit-logs", icon: Shield, requiredRole: "superadmin" },
   { label: "Membership Coupons", href: "/memberships", icon: TicketPercent },
   { label: "Gift Codes", href: "/gift-codes", icon: Gift },
+  { label: "Products", href: "/products", icon: Boxes, requiredRole: "admin" },
+  { label: "Orders", href: "/orders", icon: ShoppingCart, requiredRole: "admin" },
+  { label: "Payments", href: "/payments", icon: CreditCard, requiredRole: "admin" },
+  { label: "Rewards", href: "/rewards", icon: Gift, requiredRole: "admin" },
+  { label: "Referrals", href: "/referrals", icon: Network, requiredRole: "admin" },
+  { label: "Notifications & Broadcast", href: "/notifications", icon: Bell, requiredRole: "admin" },
+  { label: "Challenges", href: "/challenges", icon: Flag, requiredRole: "admin" },
+  { label: "Nutrition", href: "/nutrition", icon: Utensils, requiredRole: "admin" },
+  { label: "Content", href: "/content", icon: BookOpen, requiredRole: "admin" },
+  { label: "Media", href: "/media", icon: Image, requiredRole: "admin" },
+  { label: "Ops", href: "/ops", icon: Activity, requiredRole: "admin" },
 ];
 
 export default function Sidebar({ open, setOpen, mobileOpen, setMobileOpen }: SidebarProps) {

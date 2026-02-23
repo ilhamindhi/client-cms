@@ -15,7 +15,11 @@ export default function Card({ className, children, ...props }: Props) {
 
 export function CardHeader({ className, children, ...props }: Props) {
   return (
-    <div className={cn("border-b border-[var(--color-border)] px-5 py-4", className)} {...props}>
+    <div
+      className={cn("border-b border-[var(--color-border)] px-4 py-3", className)}
+      data-ui="card-header"
+      {...props}
+    >
       {children}
     </div>
   );
@@ -31,7 +35,7 @@ export function CardTitle({ className, children, ...props }: Props) {
 
 export function CardDescription({ className, children, ...props }: Props) {
   return (
-    <p className={cn("mt-1 text-sm text-slate-500", className)} {...props}>
+    <p className={cn("mt-1 text-sm text-slate-500", className)} data-ui="card-description" {...props}>
       {children}
     </p>
   );
@@ -39,7 +43,7 @@ export function CardDescription({ className, children, ...props }: Props) {
 
 export function CardContent({ className, children, ...props }: Props) {
   return (
-    <div className={cn("px-5 py-4", className)} {...props}>
+    <div className={cn("px-4 py-3", className)} data-ui="card-content" {...props}>
       {children}
     </div>
   );

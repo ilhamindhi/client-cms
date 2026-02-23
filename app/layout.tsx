@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import TokenRefreshProvider from "@/components/TokenRefreshProvider";
+import ToastViewport from "@/components/ui/ToastViewport";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,7 +29,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <TokenRefreshProvider>{children}</TokenRefreshProvider>
+        <TokenRefreshProvider>
+          {children}
+          <ToastViewport />
+        </TokenRefreshProvider>
       </body>
     </html>
   );

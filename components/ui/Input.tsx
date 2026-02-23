@@ -27,7 +27,7 @@ const Input = forwardRef<HTMLInputElement, Props>(function Input(
         {...props}
       />
       {error ? <span className="text-xs text-[var(--color-danger-dark)]">{error}</span> : null}
-      {!error && hint ? <span className="text-xs text-slate-500">{hint}</span> : null}
+      {!error && hint ? <span className="text-xs text-slate-500" data-ui="field-hint">{hint}</span> : null}
     </label>
   );
 });

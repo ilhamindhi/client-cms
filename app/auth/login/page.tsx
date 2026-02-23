@@ -8,6 +8,7 @@ import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { login } from "@/lib/api/auth";
+import { useFeedbackToast } from "@/lib/hooks/use-feedback-toast";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function LoginPage() {
@@ -18,6 +19,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useFeedbackToast({
+    error,
+    errorTitle: "Login failed",
+  });
 
   useEffect(() => {
     if (accessToken) {

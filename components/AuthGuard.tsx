@@ -13,10 +13,10 @@ const PUBLIC_PATHS = ["/auth/login"];
 export default function AuthGuard({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isHydrated, accessToken } = useAuthStore();
+  const { isHydrated, isSessionRestoring, accessToken } = useAuthStore();
 
   useEffect(() => {
-    if (!isHydrated) {
+    if (!isHydrated || isSessionRestoring) {
       return;
     }
 
@@ -29,9 +29,9 @@ export default function AuthGuard({ children }: Props) {
       const redirectTo = encodeURIComponent(pathname || "/");
       router.replace(`/auth/login?redirect=${redirectTo}`);
     }
-  }, [accessToken, isHydrated, pathname, router]);
+  }, [accessToken, isHydrated, isSessionRestoring, pathname, router]);
 
-  if (!isHydrated) {
+  if (!isHydrated || isSessionRestoring) {
     return (
       <div className="grid min-h-screen place-content-center">
         <div className="text-center">

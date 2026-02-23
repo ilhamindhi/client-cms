@@ -2,7 +2,11 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { clearAccessTokenCookie, setAccessTokenCookie } from "@/lib/auth-cookie";
+import { clearSessionCookies, syncSessionCookies } from "@/lib/auth-cookie";
+import {
+  CMS_SESSION_MODE,
+  PERSIST_TOKENS_TO_LOCAL_STORAGE,
+} from "@/lib/session-mode";
 import type { AuthUser } from "@/lib/types";
 
 type AuthState = {
@@ -10,6 +14,7 @@ type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
   isHydrated: boolean;
+  isSessionRestoring: boolean;
   setAuth: (payload: {
     user: AuthUser;
     accessToken: string;
@@ -18,6 +23,7 @@ type AuthState = {
   }) => void;
   clearAuth: () => void;
   markHydrated: () => void;
+  setSessionRestoring: (value: boolean) => void;
   hasRole: (role: "admin" | "superadmin") => boolean;
 };
 
@@ -28,24 +34,44 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isHydrated: false,
+      isSessionRestoring: false,
       setAuth: ({ user, accessToken, refreshToken, expiresInSec }) => {
         set({
           user,
           accessToken,
           refreshToken,
+          isSessionRestoring: false,
         });
-        setAccessTokenCookie(accessToken, expiresInSec || 60 * 60 * 24);
+
+        void syncSessionCookies({
+          accessToken,
+          refreshToken,
+          expiresInSec: expiresInSec || 60 * 60 * 24,
+        }).catch(() => {
+          if (CMS_SESSION_MODE === "http_only") {
+            set({
+              user: null,
+              accessToken: null,
+              refreshToken: null,
+              isSessionRestoring: false,
+            });
+          }
+        });
       },
       clearAuth: () => {
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
+          isSessionRestoring: false,
         });
-        clearAccessTokenCookie();
+        void clearSessionCookies();
       },
       markHydrated: () => {
         set({ isHydrated: true });
+      },
+      setSessionRestoring: (value) => {
+        set({ isSessionRestoring: value });
       },
       hasRole: (role) => (get().user?.roles || []).includes(role),
     }),
@@ -54,14 +80,18 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        ...(PERSIST_TOKENS_TO_LOCAL_STORAGE
+          ? {
+              accessToken: state.accessToken,
+              refreshToken: state.refreshToken,
+            }
+          : {}),
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.markHydrated();
         }
       },
-    },
-  ),
+    }
+  )
 );

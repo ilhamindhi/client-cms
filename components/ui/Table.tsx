@@ -17,7 +17,7 @@ export function TableHead({ className, children, ...props }: HTMLAttributes<HTML
   return (
     <th
       className={cn(
-        "border-b border-[var(--color-border)] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600",
+        "border-b border-[var(--color-border)] px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600",
         className,
       )}
       {...props}
@@ -29,7 +29,7 @@ export function TableHead({ className, children, ...props }: HTMLAttributes<HTML
 
 export function TableCell({ className, children, ...props }: HTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn("border-b border-[var(--color-border)] px-4 py-3 text-slate-700", className)} {...props}>
+    <td className={cn("border-b border-[var(--color-border)] px-3 py-2 text-slate-700", className)} {...props}>
       {children}
     </td>
   );
