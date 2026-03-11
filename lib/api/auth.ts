@@ -6,6 +6,7 @@ import type {
   CreateAdminUserResult,
   SuperadminForceLogoutResult,
   SuperadminResetPasswordResult,
+  UserEmailSettings,
   UserRole,
   UserStatus,
 } from "@/lib/types";
@@ -161,6 +162,32 @@ export function resetUserPassword(
 
 export function setUserRoles(token: string, userId: string, payload: { roles: UserRole[] }) {
   return apiRequest<AdminUser>(`/auth/superadmin/users/${userId}/roles`, {
+    method: "PATCH",
+    token,
+    body: payload,
+  });
+}
+
+export function getUserEmailSettings(token: string, userId: string) {
+  return apiRequest<UserEmailSettings>(`/auth/admin/users/${userId}/email-settings`, {
+    method: "GET",
+    token,
+  });
+}
+
+export function updateUserEmailSettings(
+  token: string,
+  userId: string,
+  payload: {
+    recovery_email?: string | null;
+    pending_email?: string | null;
+    clear_pending_email?: boolean;
+    clear_pending_recovery_email?: boolean;
+    mark_email_verified?: boolean;
+    mark_recovery_email_verified?: boolean;
+  },
+) {
+  return apiRequest<UserEmailSettings>(`/auth/admin/users/${userId}/email-settings`, {
     method: "PATCH",
     token,
     body: payload,

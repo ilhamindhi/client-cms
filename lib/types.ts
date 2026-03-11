@@ -74,6 +74,20 @@ export type SuperadminResetPasswordResult = {
   temporary_password?: string | null;
 };
 
+export type UserEmailSettings = {
+  user_id: string;
+  email: string;
+  email_verified_at?: string | null;
+  pending_email?: string | null;
+  pending_email_requested_at?: string | null;
+  recovery_email?: string | null;
+  recovery_email_verified_at?: string | null;
+  pending_recovery_email?: string | null;
+  pending_recovery_email_requested_at?: string | null;
+  has_recovery_email?: boolean;
+  updated_at?: string | null;
+};
+
 export type MembershipPlan = {
   id: string;
   code: string;

@@ -72,7 +72,7 @@ http://localhost:3000/auth/login
 ## Environment
 
 `NEXT_PUBLIC_API_BASE_URL`
-- Default lokal: `http://localhost:3000/api/v1`
+- Default lokal: `http://localhost:3001/api/v1`
 - Arahkan ke backend service kamu yang aktif
 
 `NEXT_PUBLIC_CMS_SESSION_MODE`

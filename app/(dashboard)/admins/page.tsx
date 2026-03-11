@@ -14,14 +14,16 @@ import Table, { TableCell, TableHead, TableRow } from "@/components/ui/Table";
 import {
   createAdminUser,
   forceLogoutUserSessions,
+  getUserEmailSettings,
   listAdminUsers,
   resetUserPassword,
   setUserRoles,
   setUserStatus,
+  updateUserEmailSettings,
 } from "@/lib/api/auth";
 import { useFeedbackToast } from "@/lib/hooks/use-feedback-toast";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import type { AdminUser, UserRole, UserStatus } from "@/lib/types";
+import type { AdminUser, UserEmailSettings, UserRole, UserStatus } from "@/lib/types";
 import { formatDateTime, maskText } from "@/lib/utils";
 
 type CreateAdminForm = {
@@ -30,7 +32,7 @@ type CreateAdminForm = {
   display_name: string;
 };
 
-type UserActionType = "status" | "roles" | "force-logout" | "reset-password";
+type UserActionType = "status" | "roles" | "force-logout" | "reset-password" | "email-settings";
 
 type UserActionModalState = {
   type: UserActionType;
@@ -45,6 +47,15 @@ const emptyCreateForm: CreateAdminForm = {
 
 const USER_ROLE_OPTIONS: UserRole[] = ["user", "admin", "superadmin"];
 
+const emptyEmailSettingsForm = {
+  recovery_email: "",
+  pending_email: "",
+  clear_pending_email: false,
+  clear_pending_recovery_email: false,
+  mark_email_verified: false,
+  mark_recovery_email_verified: false,
+};
+
 function normalizeUserStatus(raw: string | null | undefined): UserStatus {
   const normalized = String(raw || "").toLowerCase();
   if (normalized === "inactive" || normalized === "suspended") {
@@ -57,6 +68,7 @@ function actionModalTitle(type: UserActionType) {
   if (type === "status") return "Update User Status";
   if (type === "roles") return "Update User Roles";
   if (type === "force-logout") return "Force Logout Sessions";
+  if (type === "email-settings") return "User Email Settings";
   return "Reset User Password";
 }
 
@@ -64,6 +76,7 @@ function actionSubmitLabel(type: UserActionType) {
   if (type === "status") return "Save Status";
   if (type === "roles") return "Save Roles";
   if (type === "force-logout") return "Force Logout";
+  if (type === "email-settings") return "Save Email Settings";
   return "Reset Password";
 }
 
@@ -107,6 +120,9 @@ export default function AdminUsersPage() {
   const [forceLogoutReason, setForceLogoutReason] = useState("");
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [actionConfirmed, setActionConfirmed] = useState(false);
+  const [emailSettingsForm, setEmailSettingsForm] = useState(emptyEmailSettingsForm);
+  const [loadedEmailSettings, setLoadedEmailSettings] = useState<UserEmailSettings | null>(null);
+  const [isEmailSettingsLoading, setIsEmailSettingsLoading] = useState(false);
 
   useFeedbackToast({
     error: pageError || createFormError || actionError,
@@ -168,6 +184,9 @@ export default function AdminUsersPage() {
     setActionError(null);
     setIsActionSubmitting(false);
     setActionConfirmed(false);
+    setIsEmailSettingsLoading(false);
+    setLoadedEmailSettings(null);
+    setEmailSettingsForm(emptyEmailSettingsForm);
   }, []);
 
   function openActionModal(type: UserActionType, user: AdminUser) {
@@ -175,6 +194,9 @@ export default function AdminUsersPage() {
     setActionError(null);
     setActionModal({ type, user });
     setActionConfirmed(false);
+    setLoadedEmailSettings(null);
+    setEmailSettingsForm(emptyEmailSettingsForm);
+    setIsEmailSettingsLoading(false);
 
     if (type === "status") {
       const currentStatus = normalizeUserStatus(user.status);
@@ -195,6 +217,36 @@ export default function AdminUsersPage() {
 
     if (type === "force-logout") {
       setForceLogoutReason("");
+      return;
+    }
+
+    if (type === "email-settings") {
+      if (!accessToken) {
+        setActionError("Access token tidak tersedia.");
+        return;
+      }
+
+      setIsEmailSettingsLoading(true);
+      void getUserEmailSettings(accessToken, user.id)
+        .then((settings) => {
+          setLoadedEmailSettings(settings);
+          setEmailSettingsForm({
+            recovery_email: settings.recovery_email || "",
+            pending_email: settings.pending_email || "",
+            clear_pending_email: false,
+            clear_pending_recovery_email: false,
+            mark_email_verified: false,
+            mark_recovery_email_verified: false,
+          });
+        })
+        .catch((caughtError) => {
+          setActionError(
+            caughtError instanceof Error ? caughtError.message : "Failed to load user email settings",
+          );
+        })
+        .finally(() => {
+          setIsEmailSettingsLoading(false);
+        });
       return;
     }
 
@@ -300,6 +352,40 @@ export default function AdminUsersPage() {
 
         const updated = await setUserRoles(accessToken, user.id, { roles });
         setPageMessage(`Roles ${updated.email} diperbarui: ${(updated.roles || []).join(", ")}.`);
+      } else if (type === "email-settings") {
+        const payload: {
+          recovery_email?: string | null;
+          pending_email?: string | null;
+          clear_pending_email?: boolean;
+          clear_pending_recovery_email?: boolean;
+          mark_email_verified?: boolean;
+          mark_recovery_email_verified?: boolean;
+        } = {};
+
+        payload.recovery_email = emailSettingsForm.recovery_email.trim()
+          ? emailSettingsForm.recovery_email.trim()
+          : null;
+        payload.pending_email = emailSettingsForm.pending_email.trim()
+          ? emailSettingsForm.pending_email.trim()
+          : null;
+
+        if (emailSettingsForm.clear_pending_email) {
+          payload.clear_pending_email = true;
+        }
+        if (emailSettingsForm.clear_pending_recovery_email) {
+          payload.clear_pending_recovery_email = true;
+        }
+        if (emailSettingsForm.mark_email_verified) {
+          payload.mark_email_verified = true;
+        }
+        if (emailSettingsForm.mark_recovery_email_verified) {
+          payload.mark_recovery_email_verified = true;
+        }
+
+        const updated = await updateUserEmailSettings(accessToken, user.id, payload);
+        setPageMessage(
+          `Email settings ${user.email} diperbarui. Pending email: ${updated.pending_email || "-"}, recovery email: ${updated.recovery_email || "-"}.`,
+        );
       } else if (type === "force-logout") {
         const result = await forceLogoutUserSessions(accessToken, user.id, {
           reason: forceLogoutReason.trim() || undefined,
@@ -495,6 +581,14 @@ export default function AdminUsersPage() {
                             type="button"
                             size="sm"
                             variant="ghost"
+                            onClick={() => openActionModal("email-settings", entry)}
+                          >
+                            Email Settings
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
                             onClick={() => openActionModal("force-logout", entry)}
                           >
                             Force Logout
@@ -655,6 +749,105 @@ export default function AdminUsersPage() {
                     onChange={(event) => setForceLogoutReason(event.target.value)}
                     placeholder="Alasan force logout semua session"
                   />
+                ) : null}
+
+                {actionModal.type === "email-settings" ? (
+                  <div className="space-y-3">
+                    {isEmailSettingsLoading ? (
+                      <Alert variant="info">Memuat email settings user...</Alert>
+                    ) : (
+                      <>
+                        <div className="rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm text-slate-700">
+                          <div>Primary email: <span className="font-semibold text-slate-900">{loadedEmailSettings?.email || "-"}</span></div>
+                          <div>Email verified at: <span className="font-semibold text-slate-900">{formatDateTime(loadedEmailSettings?.email_verified_at)}</span></div>
+                          <div>Pending email: <span className="font-semibold text-slate-900">{loadedEmailSettings?.pending_email || "-"}</span></div>
+                          <div>Pending requested: <span className="font-semibold text-slate-900">{formatDateTime(loadedEmailSettings?.pending_email_requested_at)}</span></div>
+                          <div>Current recovery email: <span className="font-semibold text-slate-900">{loadedEmailSettings?.recovery_email || "-"}</span></div>
+                          <div>Recovery verified at: <span className="font-semibold text-slate-900">{formatDateTime(loadedEmailSettings?.recovery_email_verified_at)}</span></div>
+                          <div>Pending recovery email: <span className="font-semibold text-slate-900">{loadedEmailSettings?.pending_recovery_email || "-"}</span></div>
+                          <div>Pending recovery requested: <span className="font-semibold text-slate-900">{formatDateTime(loadedEmailSettings?.pending_recovery_email_requested_at)}</span></div>
+                        </div>
+
+                        <Input
+                          label="Recovery Email"
+                          type="email"
+                          value={emailSettingsForm.recovery_email}
+                          onChange={(event) =>
+                            setEmailSettingsForm((prev) => ({
+                              ...prev,
+                              recovery_email: event.target.value,
+                            }))
+                          }
+                          placeholder="Kosongkan untuk hapus recovery email"
+                        />
+                        <Input
+                          label="Pending Email"
+                          type="email"
+                          value={emailSettingsForm.pending_email}
+                          onChange={(event) =>
+                            setEmailSettingsForm((prev) => ({
+                              ...prev,
+                              pending_email: event.target.value,
+                            }))
+                          }
+                          placeholder="Opsional: set/override pending email"
+                        />
+
+                        <label className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={emailSettingsForm.clear_pending_email}
+                            onChange={(event) =>
+                              setEmailSettingsForm((prev) => ({
+                                ...prev,
+                                clear_pending_email: event.target.checked,
+                              }))
+                            }
+                          />
+                          Clear pending email
+                        </label>
+                        <label className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={emailSettingsForm.clear_pending_recovery_email}
+                            onChange={(event) =>
+                              setEmailSettingsForm((prev) => ({
+                                ...prev,
+                                clear_pending_recovery_email: event.target.checked,
+                              }))
+                            }
+                          />
+                          Clear pending recovery email
+                        </label>
+                        <label className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={emailSettingsForm.mark_email_verified}
+                            onChange={(event) =>
+                              setEmailSettingsForm((prev) => ({
+                                ...prev,
+                                mark_email_verified: event.target.checked,
+                              }))
+                            }
+                          />
+                          Mark primary email verified now
+                        </label>
+                        <label className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={emailSettingsForm.mark_recovery_email_verified}
+                            onChange={(event) =>
+                              setEmailSettingsForm((prev) => ({
+                                ...prev,
+                                mark_recovery_email_verified: event.target.checked,
+                              }))
+                            }
+                          />
+                          Mark recovery email verified now
+                        </label>
+                      </>
+                    )}
+                  </div>
                 ) : null}
 
                 {actionModal.type === "reset-password" ? (
